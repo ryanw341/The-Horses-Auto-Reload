@@ -1,0 +1,41 @@
+{
+  "id": "the-horses-auto-reload",
+  "title": "The Horse's Auto Reload",
+  "description": "When a ranged weapon's attack would fail only because its magazine is empty, run the weapon's Reload activity first and then carry on with the attack. If the ammunition is also gone, nothing happens and the normal out-of-ammo failure stands. Built for the dnd5e activity data model.",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "The Horse"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "packs": [],
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "4.0.0",
+          "verified": "5.3.3"
+        }
+      }
+    ]
+  },
+  "url": "https://github.com/ryanw341/The-Horses-Auto-Reload",
+  "manifest": "https://raw.githubusercontent.com/ryanw341/The-Horses-Auto-Reload/main/module.json",
+  "download": "https://github.com/ryanw341/The-Horses-Auto-Reload/releases/download/v1.0.0/module.zip"
+}

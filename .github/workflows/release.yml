@@ -1,0 +1,61 @@
+name: Release Module
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Node 21+ is required: --test only accepts glob patterns from that version on.
+          node-version: '22'
+
+      - name: Run tests
+        run: node --test "tests/*.test.mjs"
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify module.json version matches the release tag
+        run: |
+          MANIFEST_VERSION=$(node -p "require('./module.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "module.json version ($MANIFEST_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+      - name: Create properly structured zip
+        run: |
+          mkdir -p /tmp/package
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.gitignore' \
+            --exclude='tests' \
+            --exclude='package.json' \
+            --exclude='node_modules' \
+            --exclude='*.bak' \
+            ./ /tmp/package/
+          cd /tmp/package
+          zip -r module.zip ./*
+          mv module.zip $GITHUB_WORKSPACE/module.zip
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./module.zip

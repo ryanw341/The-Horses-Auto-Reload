@@ -1,0 +1,4 @@
+{
+  "MODULE_NAME": "The Horse's Auto Reload",
+  "MODULE_DESCRIPTION": "Automatically runs a ranged weapon's Reload activity when an attack would fail only because the magazine is empty."
+}
