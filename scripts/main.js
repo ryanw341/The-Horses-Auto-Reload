@@ -1,13 +1,13 @@
 /*
  * The Horse's Auto Reload — entry point.
  *
- * Settings are registered on init; the hook is wired on ready so that the dnd5e
+ * Settings are registered on init; the use wrappers are installed on ready so the dnd5e
  * system is fully initialised and the module can check it is actually running
  * under a version whose activity API it understands.
  */
 
 import { MODULE_ID, registerSettings } from './settings.js';
-import { onPreUseActivity } from './reload.js';
+import { installAutoReload } from './reload.js';
 
 Hooks.once('init', () => {
   console.log(`${MODULE_ID} | Initializing`);
@@ -20,14 +20,14 @@ Hooks.once('ready', () => {
     return;
   }
 
-  // Activities arrived in dnd5e 4.0. Under anything older the hook below never
-  // fires, but bail loudly rather than appearing to work.
+  // Activities arrived in dnd5e 4.0. Earlier versions cannot use this module.
   const major = Number.parseInt(game.system.version, 10);
   if (Number.isFinite(major) && major < 4) {
     console.warn(`${MODULE_ID} | dnd5e ${game.system.version} predates activities; disabled`);
     return;
   }
 
-  Hooks.on('dnd5e.preUseActivity', onPreUseActivity);
-  console.log(`${MODULE_ID} | Ready`);
+  const installed = installAutoReload();
+  if (installed) console.log(`${MODULE_ID} | Ready`);
+  else console.error(`${MODULE_ID} | No supported attack activity class found; auto reload is unavailable.`);
 });

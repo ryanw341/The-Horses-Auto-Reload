@@ -1,6 +1,6 @@
 # The Horse's Auto Reload
 
-When a ranged weapon's attack would fail **only** because its magazine is empty, this module runs the weapon's Reload activity first and then carries on with the attack. If the ammunition is gone too, it does nothing and the normal out-of-ammo failure stands.
+When a weapon's magazine is empty, this module spends the ammunition configured on its **Reload** activity, shows a reload notification, and continues the attack **on the same click**. If ammunition is unavailable, the attack is cancelled before any attack roll or MIDI-QOL workflow starts.
 
 Built for the dnd5e activity data model (4.0 and later), developed against **dnd5e 5.3.3** on **Foundry v14**.
 
@@ -33,11 +33,11 @@ On a world (non-embedded) item, `target` on the ammo line is the ammo's `system.
 
 ## How the module hooks in
 
-`dnd5e.preUseActivity` fires at the very top of `Activity#use`, before the usage dialog, before scaling, and before consumption. Everything ahead of it is a clone and some config marshalling, so returning `false` there cancels with no side effects. That makes it the only safe interception point, and it is also ahead of anything MIDI-QOL does.
+The module awaits reloading at the beginning of the configured attack activity's `use()` method. The original use then runs once with the refreshed embedded weapon, returning its normal result to the caller. MIDI-QOL's attack class is supported too, including installations that register it as a separate `midiAttack` type.
 
-The hook is synchronous, so the module cannot await anything before deciding. It makes the cheap check there — is this an attack, on a weapon, with a magazine, and is the magazine empty — cancels the use, and then settles the expensive question asynchronously. The attack is re-invoked either way, so cancelling speculatively is safe: if the ammo turns out to be empty too, the attack runs exactly as it would have and the player sees dnd5e's own failure.
+This happens before dnd5e clones the weapon and before MIDI creates its workflow. The earlier `preUseActivity` approach was too late: it received a stale clone of the empty weapon, and MIDI had already started a workflow. Cancelling that use and retrying could leave the reload complete but require another click to attack.
 
-A one-shot re-entrancy guard, consumed by the hook on the way through, keeps the re-invoked attack from being intercepted again.
+An empty weapon only continues after both ammo consumption and magazine refill succeed. Missing ammo, a failed reload, or an enabled once-per-turn limit cancels the attack with a notification. Repeated clicks while the reload and attack are pending cannot spend another magazine or roll twice. Loaded weapons follow their normal usage flow.
 
 ### Running the reload
 
@@ -67,15 +67,17 @@ Everything is reached through the activity the hook hands over — `activity.ite
 | Setting | Default | Effect |
 | --- | --- | --- |
 | Enable Auto Reload | On | Master switch. |
-| Announce Reloads in Chat | On | Post a short message when a weapon reloads itself. |
+| Announce Reloads in Chat | On | Post a short message when a weapon reloads itself. The brief reload notification is always shown. |
 | Limit to One Reload Per Turn | Off | Enforce the once-per-turn limit the Reload activity's description states. Outside combat there are no turns, so the limit does not apply. |
 | Reload Activity Name | `Reload` | The activity name treated as a reload. |
 
 ## What is verified and what is not
 
-**Verified against the dnd5e 5.3.3 source**, read from the `release-5.3.3` tag: the five activity hooks and their signatures; that `preUseActivity` is synchronous and returning `false` aborts cleanly; that `consume()` applies updates to `this.actor`; that `_prepareUsageUpdates` with `returnErrors` is a safe dry run; and the `consume: true` failure above.
+**Checked against dnd5e 5.3.3 and MIDI-QOL 14.0.9 source:** activity cloning and workflow creation order, reload consumption, and the resource dry run. Automated tests cover single-click continuation, stale clones, replacement item documents, synthetic actors, exhausted ammo, cancelled or ineffective reloads, duplicate clicks, and the once-per-turn setting.
 
-**Not verified, because it needs a live world:** the interaction with midi-qol 14.0.9. The module intervenes before MIDI does any work and re-invokes through `use()` so MIDI sees an ordinary attack, but the MIDI-busy check is written against internals that are not a published API and deliberately fails open — if it cannot tell, it proceeds. Also unverified: the exact shape of the weapons and ammo in your world.
+An additional source replay ran both systems' actual `use()` methods in a minimal harness. It confirmed reloading happens before both item clones and workflow creation, produces one attack, and creates no attack workflow when ammo is unavailable.
+
+The tests use a simulated Foundry environment. An interactive live-world check and your specific weapon/ammunition configurations are still needed to confirm the installed module combination. The attack's normal targeting, attack configuration, and MIDI automation settings remain in effect; the reload adds no confirmation dialog or second firing click.
 
 ## Compatibility
 

@@ -24,7 +24,7 @@ export function findReloadActivity(activities, name = 'Reload') {
   if (!wanted) return null;
 
   let fallback = null;
-  for (const activity of activities ?? []) {
+  for (const activity of activities?.values?.() ?? activities ?? []) {
     if (String(activity?.name ?? '').trim().toLowerCase() !== wanted) continue;
     const ideal = activity?.type === 'utility' && activity?.activation?.type === 'special';
     if (ideal) return activity;
@@ -39,7 +39,8 @@ export function findReloadActivity(activities, name = 'Reload') {
  * @returns {boolean} True for attack activities
  */
 export function isAttackActivity(activity) {
-  return activity?.type === 'attack';
+  return ['attack', 'midiAttack'].includes(activity?.type)
+    || activity?.constructor?.metadata?.type === 'attack';
 }
 
 /**

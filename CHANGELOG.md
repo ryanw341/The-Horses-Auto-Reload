@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1
+
+- Fixed empty weapons reloading but requiring a second click to attack. Reload now completes before weapon cloning and MIDI-QOL workflow creation, then the same use continues with the updated embedded weapon.
+- Empty weapons with no ammunition, failed reload consumption, or a magazine that remains empty cannot roll an attack.
+- Added a nonblocking reload notification while preserving the optional chat announcement.
+- Prevented repeated clicks during a reload from spending multiple magazines or rolling duplicate attacks.
+- Preserved custom ammo targets, synthetic token actors, the configured Reload activity name, and the optional once-per-turn limit.
+- Added integration-style tests for single-click use, MIDI workflow ordering, and failure handling.
+
 ## 1.0.0
 
 Initial release.
